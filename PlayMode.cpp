@@ -147,6 +147,10 @@ void PlayMode::update(float elapsed) {
 		if (down.pressed && !up.pressed) move.y =-1.0f;
 		if (!down.pressed && up.pressed) move.y = 1.0f;
 
+
+		// move.x = 1.0
+
+
 		//make it so that moving diagonally doesn't go faster:
 		if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
 
@@ -156,27 +160,36 @@ void PlayMode::update(float elapsed) {
 		//using a for() instead of a while() here so that if walkpoint gets stuck in
 		// some awkward case, code will not infinite loop:
 		for (uint32_t iter = 0; iter < 10; ++iter) {
-			if (remain == glm::vec3(0.0f)) break;
+			if (remain == glm::vec3(0.0f)){
+				// std::cout << "remain == glm::vec3(0.0f)" << std::endl;
+				break;
+			} 
 			WalkPoint end;
 			float time;
 			walkmesh->walk_in_triangle(player.at, remain, &end, &time);
+			std::cout << "player.at.indices.x,y,z = (" << player.at.indices.x << ", " << 
+				player.at.indices.y << ", " << player.at.indices.z << ")" << std::endl;
 			player.at = end;
 			if (time == 1.0f) {
 				//finished within triangle:
+				std::cout << "finished within triangle: remain" << std::endl;
 				remain = glm::vec3(0.0f);
 				break;
 			}
 			//some step remains:
+			std::cout << "some step remains:" << std::endl;
 			remain *= (1.0f - time);
 			//try to step over edge:
 			glm::quat rotation;
 			if (walkmesh->cross_edge(player.at, &end, &rotation)) {
 				//stepped to a new triangle:
+				std::cout << "	stepped to a new triangle" << std::endl;
 				player.at = end;
 				//rotate step to follow surface:
 				remain = rotation * remain;
 			} else {
 				//ran into a wall, bounce / slide along it:
+				std::cout << "	ran into a wall, bounce / slide along it" << std::endl;
 				glm::vec3 const &a = walkmesh->vertices[player.at.indices.x];
 				glm::vec3 const &b = walkmesh->vertices[player.at.indices.y];
 				glm::vec3 const &c = walkmesh->vertices[player.at.indices.z];
@@ -188,8 +201,10 @@ void PlayMode::update(float elapsed) {
 				float d = glm::dot(remain, in);
 				if (d < 0.0f) {
 					//bounce off of the wall:
+					std::cout << "		bounce off of the wall " << std::endl;
 					remain += (-1.25f * d) * in;
 				} else {
+					std::cout << "		bend slightly away from wall " << std::endl;
 					//if it's just pointing along the edge, bend slightly away from wall:
 					remain += 0.01f * d * in;
 				}
@@ -198,6 +213,8 @@ void PlayMode::update(float elapsed) {
 
 		if (remain != glm::vec3(0.0f)) {
 			std::cout << "NOTE: code used full iteration budget for walking." << std::endl;
+		}else{
+			std::cout << "dont move" << std::endl;
 		}
 
 		//update player's position to respect walking:
@@ -212,14 +229,14 @@ void PlayMode::update(float elapsed) {
 			player.transform->rotation = glm::normalize(adjust * player.transform->rotation);
 		}
 
-		/*
-		glm::mat4x3 frame = camera->transform->make_local_to_parent();
+		
+		glm::mat4x3 frame = player.camera->transform->make_local_to_parent();
 		glm::vec3 right = frame[0];
 		//glm::vec3 up = frame[1];
 		glm::vec3 forward = -frame[2];
 
-		camera->transform->position += move.x * right + move.y * forward;
-		*/
+		player.camera->transform->position += move.x * right + move.y * forward;
+		
 	}
 
 	//reset button press counters:
