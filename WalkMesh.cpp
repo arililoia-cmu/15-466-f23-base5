@@ -271,9 +271,11 @@ bool WalkMesh::cross_edge(WalkPoint const &start, WalkPoint *end_, glm::quat *ro
 
 		//make 'rotation' the rotation that takes (start.indices)'s normal to (end.indices)'s normal:
 		// compute start's normal
-		glm::vec3 start_normal = calculate_normal(start_x, start_y, start_z);
-		glm::vec3 end_normal =  calculate_normal(start_y, start_x, start_alpha);
-		// glm::vec3 end_normal = to_world_smooth_normal(end);
+		// glm::vec3 start_normal = calculate_normal(start_x, start_y, start_z);
+		// glm::vec3 end_normal =  calculate_normal(start_y, start_x, start_alpha);
+
+		glm::vec3 const &start_normal  = calculate_normal(start_x, start_y, start_z);
+		glm::vec3 const &end_normal =  calculate_normal(start_y, start_x, start_alpha);
 		//TODO
 		rotation = glm::rotation(start_normal, end_normal);
 		return true;
