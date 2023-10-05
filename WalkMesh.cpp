@@ -40,10 +40,14 @@ WalkMesh::WalkMesh(std::vector< glm::vec3 > const &vertices_, std::vector< glm::
 	}
 }
 
+
+
+
 //TODO done - project pt to the plane of triangle a,b,c and return the barycentric weights of the projected point:
 glm::vec3 barycentric_weights(glm::vec3 const &a, glm::vec3 const &b, glm::vec3 const &c, glm::vec3 const &pt) {
 	// following Craig Reynolds' answer to this stackexchange post:
 	// https://gamedev.stackexchange.com/questions/28781/easy-way-to-project-point-onto-triangle-or-plane
+	// return bweights;
 	glm::vec3 u = b - a;
 	glm::vec3 v = c - a;
 	// inspired by OpenGL cross documentation:
@@ -57,7 +61,8 @@ glm::vec3 barycentric_weights(glm::vec3 const &a, glm::vec3 const &b, glm::vec3 
 	// β=[(w×v)⋅n]/n²
 	float beta = (dot(cross(w,v), n)) / dot(n,n);
 	std::cout << "barycentric_weights: beta = " << beta << std::endl;
-	float alpha = 1.0 - beta - gamma;
+	float alpha = 1.0 - gamma - beta;
+	
 	std::cout << "barycentric_weights: alpha = " << alpha << std::endl;
 	glm::vec3 bweights = glm::vec3(alpha, beta, gamma);
 	return bweights;
@@ -139,29 +144,13 @@ void WalkMesh::walk_in_triangle(WalkPoint const &start, glm::vec3 const &step, W
 	assert(time_);
 	auto &time = *time_;
 
-	// code below attributed to Mike Stroucki
+
 	glm::vec3 const &a = vertices[start.indices.x];
 	glm::vec3 const &b = vertices[start.indices.y];
 	glm::vec3 const &c = vertices[start.indices.z];
 
-	//convert to world point
-	auto to_world_point = [this](WalkPoint const &wp){
-		return wp.weights[0]*vertices[wp.indices[0]]
-			+ wp.weights[1]*vertices[wp.indices[1]]
-			+ wp.weights[2]*vertices[wp.indices[2]];
-	};
 
-	auto barycentric_weights = [](glm::vec3 const &a, glm::vec3 const &b, glm::vec3 const &c, glm::vec3 const &pt){
-		const glm::vec3 u = b-a;
-		const glm::vec3 v = c-a;
-		const glm::vec3 w = pt-a;
-		const glm::vec3 n = glm::cross(u,v);
-		const float n2 = glm::dot(n,n);
-		float c1 = glm::dot(glm::cross(w,v), n) / n2;
-		float c2 = glm::dot(glm::cross(u,w), n) / n2;
-		float c0 = 1-(c1+c2);
-		return glm::vec3(c0, c1, c2);
-	};
+	// code below attributed to Mike Stroucki
 
 	glm::vec3 dest = to_world_point(start) + step;
 	glm::vec3 destb = barycentric_weights(a,b,c,dest);
@@ -169,7 +158,7 @@ void WalkMesh::walk_in_triangle(WalkPoint const &start, glm::vec3 const &step, W
 	unsigned int min_coord = -1;
 
 
-	auto foo = [&min_time, &min_coord](const unsigned int coord, const float d, const float s){
+	auto foo = [&min_time, &min_coord](const unsigned int coord, float d, float s){
 		if (d > 0.0) return;
 		float time = -s / (d-s);
 		assert(time >= 0.0f);
@@ -184,7 +173,8 @@ void WalkMesh::walk_in_triangle(WalkPoint const &start, glm::vec3 const &step, W
 	foo(2, destb.z, start.weights.z);
 
 	time = std::min(1.0f, min_time);
-	assert (time > 0.0f);
+	std::cout << "time: " << time << std::endl;
+	assert (time >= 0.0f);
 	glm::vec3 weights = start.weights + time*(destb-start.weights);
 
 	// convention
@@ -217,51 +207,141 @@ void WalkMesh::walk_in_triangle(WalkPoint const &start, glm::vec3 const &step, W
 			break;
 	}
 
-
-	// glm::vec3 step_coords;
-	// { //project 'step' into a barycentric-coordinates direction:
-	// 	//TODO
-	// 	step_coords = glm::vec3(0.0f);
-	// }
-	
-	// //if no edge is crossed, event will just be taking the whole step:
-	// time = 1.0f;
-	// end = start;
-
-	// //figure out which edge (if any) is crossed first.
-	// // set time and end appropriately.
-	// //TODO
-
 	//Remember: our convention is that when a WalkPoint is on an edge,
 	// then wp.weights.z == 0.0f (so will likely need to re-order the indices)
 }
 
 bool WalkMesh::cross_edge(WalkPoint const &start, WalkPoint *end_, glm::quat *rotation_) const {
+
+	assert(start.weights.z == 0.0f); //*must* be on an edge.
+	// assert(start.indices.x <= vertices.size() && start.indices.y <= vertices.size() && start.indices.z <= vertices.size());
 	assert(end_);
 	auto &end = *end_;
-
 	assert(rotation_);
 	auto &rotation = *rotation_;
 
-	assert(start.weights.z == 0.0f); //*must* be on an edge.
-	glm::uvec2 edge = glm::uvec2(start.indices);
+	// glm::uvec2 edge = glm::uvec2(start.indices);
+	
 
-	//check if 'edge' is a non-boundary edge:
-	if (edge.x == edge.y /* <-- TODO: use a real check, this is just here so code compiles */) {
-		//it is!
+	auto get_twin_triangle = [this](glm::uvec3 const &tri) {
+		auto f = next_vertex.find(glm::uvec2(tri.y, tri.x));
+		if (f != next_vertex.end()) {
+			return glm::uvec3(tri.y, tri.x, f->second);
+		} else {
+			return glm::uvec3(-1U);
+		}
+	};
 
-		//make 'end' represent the same (world) point, but on triangle (edge.y, edge.x, [other point]):
-		//TODO
+	// auto get_next_edge = [this](glm::uvec2 const &edge) {
+	// 	auto f = next_vertex.find(edge);
+	// 	if (f != next_vertex.end()) {
+	// 		return glm::uvec2(edge.y, f->second);
+	// 	} else {
+	// 		return glm::uvec2(-1U);
+	// 	}
+	// };
 
-		//make 'rotation' the rotation that takes (start.indices)'s normal to (end.indices)'s normal:
-		//TODO
+	auto calculate_normal = [this](glm::uvec3 a, glm::uvec3 b, glm::uvec3 c){
+		glm::vec3 u = b - a;
+		glm::vec3 v = c - a;
+		glm::vec3 n = cross(u,v);
+		return n;
+	};
 
-		return true;
-	} else {
+	//TODO: check if edge (start.indices.x, start.indices.y) has a triangle on the other side:
+	glm::uvec3 possible_twin_triangle = get_twin_triangle(start.indices)
+	if (possible_twin_triangle == glm::uvec3(-1U)){
+		std::cout << "possible_twin_triangle == glm::uvec3(-1U)" << std::endl;
 		end = start;
 		rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 		return false;
 	}
+
+	else{
+		// TODO: if there is another triangle:
+		// glm::uvec3 current_triangle = glm::uvec3(start.indices.x, start.indices.y, start.indices.z)
+		//  TODO: set end's weights and indicies on that triangle:
+		end.indices[0] = start.indices.y;
+		end.indices[1] = start.indices.x;
+		end.indices[2] = possible_twin_triangle.z;
+
+		end.weights[0] = weights[1];
+		end.weights[1] = weights[0];
+		end.weights[2] = 0.0f;
+
+		//make 'rotation' the rotation that takes (start.indices)'s normal to (end.indices)'s normal:
+		// compute start's normal
+		glm::vec3 start_normal = calculate_normal(start.indices);
+		glm::vec3 end_normal = calculate_normal(end.indices);
+		//TODO
+		rotation = glm::rotation(start_normal, end_normal);
+		return true;
+		
+
+
+	}
+	// else:
+
+
+	//TODO: check if edge (start.indices.x, start.indices.y) has a triangle on the other side:
+	//  hint: remember 'next_vertex'!
+	// glm::uvec2 current_triangle_next_edge = get_next_edge(start.indices.x, start.indices.y);
+	// if (current_triangle_next_edge == glm::uvec2(-1U)){
+	// 	std::cout << "current_triangle_next_edge == glm::uvec2(-1U)" << std::endl;
+	// 	end = start;
+	// 	rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	// 	return false;
+	
+	
+
+
+
+
+
+
+
+	// //TODO: check if edge (start.indices.x, start.indices.y) has a triangle on the other side:
+	// //  hint: remember 'next_vertex'!
+	// glm::uvec3 possible_twin_triangle = get_twin_triangle_2(edge);
+	// //TODO: if there is another triangle:
+	// if (possible_twin_triangle != glm::uvec3(-1U)){
+	// 	//  TODO: set end's weights and indicies on that triangle:
+	// 	end.indices[0] = edge.y;
+	// 	end.indices[1] = edge.x;
+	// 	end.indices[2] = possible_twin_triangle.z;
+
+	// 	end.weights[0] = weights[1];
+	// 	end.weights[1] = weights[0];
+	// 	end.weights[2] = 0.0f;
+
+	// 	return true;
+
+	// } else {
+	// 	end = start;
+	// 	rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	// 	return false;
+	// }
+
+
+
+	// //check if 'edge' is a non-boundary edge:
+	// if (edge.x == edge.y /* <-- TODO: use a real check, this is just here so code compiles */) {
+	// 	//it is!
+
+	// 	//make 'end' represent the same (world) point, but on triangle (edge.y, edge.x, [other point]):
+	// 	//TODO
+
+	// 	//make 'rotation' the rotation that takes (start.indices)'s normal to (end.indices)'s normal:
+	// 	// compute start's normal
+	// 	glm::vec3 start_normal = calculate_normal()
+	// 	//TODO
+
+	// 	return true;
+	// } else {
+	// 	end = start;
+	// 	rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	// 	return false;
+	// }
 }
 
 
