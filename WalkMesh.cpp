@@ -221,7 +221,10 @@ bool WalkMesh::cross_edge(WalkPoint const &start, WalkPoint *end_, glm::quat *ro
 	auto &rotation = *rotation_;
 
 	// glm::uvec2 edge = glm::uvec2(start.indices);
-	
+	glm::vec3 const &start_x = vertices[start.indices.x];
+	glm::vec3 const &start_y = vertices[start.indices.y];
+	glm::vec3 const &start_z = vertices[start.indices.z];
+
 
 	auto get_twin_triangle = [this](glm::uvec3 const &tri) {
 		auto f = next_vertex.find(glm::uvec2(tri.y, tri.x));
@@ -232,16 +235,7 @@ bool WalkMesh::cross_edge(WalkPoint const &start, WalkPoint *end_, glm::quat *ro
 		}
 	};
 
-	// auto get_next_edge = [this](glm::uvec2 const &edge) {
-	// 	auto f = next_vertex.find(edge);
-	// 	if (f != next_vertex.end()) {
-	// 		return glm::uvec2(edge.y, f->second);
-	// 	} else {
-	// 		return glm::uvec2(-1U);
-	// 	}
-	// };
-
-	auto calculate_normal = [this](glm::uvec3 a, glm::uvec3 b, glm::uvec3 c){
+	auto calculate_normal = [](glm::uvec3 const &a, glm::uvec3 const &b, glm::uvec3 const &c){
 		glm::vec3 u = b - a;
 		glm::vec3 v = c - a;
 		glm::vec3 n = cross(u,v);
@@ -249,7 +243,7 @@ bool WalkMesh::cross_edge(WalkPoint const &start, WalkPoint *end_, glm::quat *ro
 	};
 
 	//TODO: check if edge (start.indices.x, start.indices.y) has a triangle on the other side:
-	glm::uvec3 possible_twin_triangle = get_twin_triangle(start.indices)
+	glm::uvec3 possible_twin_triangle = get_twin_triangle(start.indices);
 	if (possible_twin_triangle == glm::uvec3(-1U)){
 		std::cout << "possible_twin_triangle == glm::uvec3(-1U)" << std::endl;
 		end = start;
@@ -261,23 +255,26 @@ bool WalkMesh::cross_edge(WalkPoint const &start, WalkPoint *end_, glm::quat *ro
 		// TODO: if there is another triangle:
 		// glm::uvec3 current_triangle = glm::uvec3(start.indices.x, start.indices.y, start.indices.z)
 		//  TODO: set end's weights and indicies on that triangle:
+		glm::vec3 const &start_alpha = vertices[possible_twin_triangle.z];
+
 		end.indices[0] = start.indices.y;
 		end.indices[1] = start.indices.x;
 		end.indices[2] = possible_twin_triangle.z;
 
-		end.weights[0] = weights[1];
-		end.weights[1] = weights[0];
+		end.weights[0] = start.weights[1];
+		end.weights[1] = start.weights[0];
 		end.weights[2] = 0.0f;
 
 		//make 'rotation' the rotation that takes (start.indices)'s normal to (end.indices)'s normal:
 		// compute start's normal
-		glm::vec3 start_normal = calculate_normal(start.indices);
-		glm::vec3 end_normal = calculate_normal(end.indices);
+		glm::vec3 start_normal = calculate_normal(start_x, start_y, start_z);
+		// glm::vec3 start_normal = glm::triangleNormal(start_x, start_y, start_z);
+		// assert(glm::epsilonEqual(glm::length(start_normal), 1.0f, glm::epsilon<float>()));
+		glm::vec3 end_normal =  calculate_normal(start_y, start_x, start_alpha);
 		//TODO
 		rotation = glm::rotation(start_normal, end_normal);
 		return true;
 		
-
 
 	}
 	// else:

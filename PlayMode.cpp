@@ -214,7 +214,7 @@ void PlayMode::update(float elapsed) {
 		if (remain != glm::vec3(0.0f)) {
 			std::cout << "NOTE: code used full iteration budget for walking." << std::endl;
 		}else{
-			std::cout << "dont move: remain = (" << remain.x << ", " << remain.y << ", " << remain.z << ")" << std::endl;
+			// std::cout << "dont move: remain = (" << remain.x << ", " << remain.y << ", " << remain.z << ")" << std::endl;
 		}
 
 		//update player's position to respect walking:
