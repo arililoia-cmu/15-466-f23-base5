@@ -49,14 +49,22 @@ glm::vec3 barycentric_weights(glm::vec3 const &a, glm::vec3 const &b, glm::vec3 
 
 	glm::vec3 v0 = b-a, v1 = c-a, v2 = pt-a;
 	float d00 = glm::dot(v0, v0);
+	std::cout << "d00: " << d00 << std::endl;
 	float d01 = glm::dot(v0, v1);
+	std::cout << "d01: " << d01 << std::endl;
 	float d11 = glm::dot(v1, v1);
+	std::cout << "d11: " << d11 << std::endl;
 	float d20 = glm::dot(v2, v0);
+	std::cout << "d20: " << d20 << std::endl;
 	float d21 = glm::dot(v2, v1);
+	std::cout << "d21: " << d21 << std::endl;
 
 	float denominator = d00 * d11 - d01 * d01;
+	std::cout << "denom: " << denominator << std::endl;
 	float v = (d11 * d20 - d01 * d21) / denominator;
+	std::cout << "v: " << v << std::endl;
 	float w = (d00 * d21 - d01 * d20) / denominator;
+	std::cout << "w: " << w << std::endl;
 	std::cout << "bcc x " << 1.0f-v-w << std::endl;
 	std::cout << "bcc y " << v << std::endl;
 	std::cout << "bcc z " << w << std::endl;
@@ -235,6 +243,7 @@ bool WalkMesh::cross_edge(WalkPoint const &start, WalkPoint *end_, glm::quat *ro
 		glm::vec3 v = c - a;
 		glm::vec3 n = cross(u,v);
 		return n;
+		// return glm::normalize(n);
 	};
 
 	//TODO: check if edge (start.indices.x, start.indices.y) has a triangle on the other side:
@@ -263,9 +272,8 @@ bool WalkMesh::cross_edge(WalkPoint const &start, WalkPoint *end_, glm::quat *ro
 		//make 'rotation' the rotation that takes (start.indices)'s normal to (end.indices)'s normal:
 		// compute start's normal
 		glm::vec3 start_normal = calculate_normal(start_x, start_y, start_z);
-		// glm::vec3 start_normal = glm::triangleNormal(start_x, start_y, start_z);
-		// assert(glm::epsilonEqual(glm::length(start_normal), 1.0f, glm::epsilon<float>()));
 		glm::vec3 end_normal =  calculate_normal(start_y, start_x, start_alpha);
+		// glm::vec3 end_normal = to_world_smooth_normal(end);
 		//TODO
 		rotation = glm::rotation(start_normal, end_normal);
 		return true;
