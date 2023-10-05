@@ -186,7 +186,7 @@ void PlayMode::update(float elapsed) {
 				std::cout << "	stepped to a new triangle" << std::endl;
 				player.at = end;
 				//rotate step to follow surface:
-				remain = rotation * remain;
+				// remain = rotation * remain;
 			} else {
 				//ran into a wall, bounce / slide along it:
 				std::cout << "	ran into a wall, bounce / slide along it" << std::endl;
