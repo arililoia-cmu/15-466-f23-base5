@@ -37,6 +37,8 @@ struct PlayMode : Mode {
 	glm::vec3 target_wpos;
 	glm::vec3 user_spot;
 	int points = -1;
+	int high_score = 0;
+	// int level = 1;
 
 	//player info:
 	struct Player {
