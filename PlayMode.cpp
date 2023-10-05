@@ -15,13 +15,13 @@
 
 GLuint phonebank_meshes_for_lit_color_texture_program = 0;
 Load< MeshBuffer > phonebank_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-	MeshBuffer const *ret = new MeshBuffer(data_path("phone-bank.pnct"));
+	MeshBuffer const *ret = new MeshBuffer(data_path("mine.pnct"));
 	phonebank_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
 
 Load< Scene > phonebank_scene(LoadTagDefault, []() -> Scene const * {
-	return new Scene(data_path("phone-bank.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+	return new Scene(data_path("mine.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
 		Mesh const &mesh = phonebank_meshes->lookup(mesh_name);
 
 		scene.drawables.emplace_back(transform);
@@ -39,13 +39,33 @@ Load< Scene > phonebank_scene(LoadTagDefault, []() -> Scene const * {
 
 WalkMesh const *walkmesh = nullptr;
 Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
-	WalkMeshes *ret = new WalkMeshes(data_path("phone-bank.w"));
+	WalkMeshes *ret = new WalkMeshes(data_path("mine.w"));
 	walkmesh = &ret->lookup("WalkMesh");
 	return ret;
 });
 
+
+glm::vec3 PlayMode::generate_random_vec3(){
+	// inspired by u/Walter's answer:
+	// https://stackoverflow.com/questions/5008804/generating-a-random-integer-from-a-range
+	// also taken from my game 2 code
+	std::random_device rd;     // Only used once to initialise (seed) engine
+	std::mt19937 rng(rd());    // Random-number engine used (Mersenne-Twister in this case)
+	std::uniform_real_distribution<float> uni(-1.0f,1.0f); // Guaranteed unbiased
+	return glm::vec3(uni(rng), uni(rng), 0.0f);
+}
+
 PlayMode::PlayMode() : scene(*phonebank_scene) {
 	//create a player transform:
+	for (auto &transform : scene.transforms) {
+		// std::cout << "transform.name: " << transform.name << std::endl;
+		if (transform.name == "Cylinder") {
+			target = &transform;
+			target_wpos = target->position;
+		}
+		
+	}
+
 	scene.transforms.emplace_back();
 	player.transform = &scene.transforms.back();
 
@@ -65,6 +85,8 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 
 	//start player walking at nearest walk point:
 	player.at = walkmesh->nearest_walk_point(player.transform->position);
+
+	time(&last_update);
 
 }
 
@@ -137,6 +159,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
+	
 	//player walking:
 	{
 		//combine inputs into a move:
@@ -147,16 +170,32 @@ void PlayMode::update(float elapsed) {
 		if (down.pressed && !up.pressed) move.y =-1.0f;
 		if (!down.pressed && up.pressed) move.y = 1.0f;
 
+		// time(&next_update);
+		time(&next_update);
+		if (next_update != last_update){
+			last_update = next_update;
+			target->position = generate_random_vec3();
+		}
 
+
+		// std::cout << "next_update - last_update " << next_update - last_update << std::endl;
+		// std::cout << "next update " << next_update << std::endl;
+		// std::cout << "last update " << last_update << std::endl;
+		// std::cout << player.at.x << ", " << player.at.y,
+		// target_wpos = glm::vec3(20.0f, 0.0f, 0.0f);
 		// move.x = 1.0
+		
 
-
+		//std::cout << "walkmesh->to_world_smooth_normal(player.at)" << walkmesh->to_world_smooth_normal(player.at).x << std::endl;
 		//make it so that moving diagonally doesn't go faster:
+		
 		if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
 
 		//get move in world coordinate system:
 		glm::vec3 remain = player.transform->make_local_to_world() * glm::vec4(move.x, move.y, 0.0f, 0.0f);
-
+		// std::cout << "remain " << remain.x << ", " << remain.y << ", " << remain.z << std::endl;
+		// user_spot += remain;
+		std::cout << "player.camera->transform->position spot " << player.camera->transform->position.x << ", " << player.camera->transform->position.y << ", " << player.camera->transform->position.z << std::endl;
 		//using a for() instead of a while() here so that if walkpoint gets stuck in
 		// some awkward case, code will not infinite loop:
 		for (uint32_t iter = 0; iter < 10; ++iter) {
@@ -214,7 +253,7 @@ void PlayMode::update(float elapsed) {
 		if (remain != glm::vec3(0.0f)) {
 			std::cout << "NOTE: code used full iteration budget for walking." << std::endl;
 		}else{
-			std::cout << "dont move: remain = (" << remain.x << ", " << remain.y << ", " << remain.z << ")" << std::endl;
+			// std::cout << "dont move: remain = (" << remain.x << ", " << remain.y << ", " << remain.z << ")" << std::endl;
 		}
 
 		//update player's position to respect walking:

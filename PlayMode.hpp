@@ -17,7 +17,13 @@ struct PlayMode : Mode {
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
+	glm::vec3 generate_random_vec3();
 	//----- game state -----
+	
+
+	time_t last_update;
+	time_t next_update;
+    
 
 	//input tracking:
 	struct Button {
@@ -27,6 +33,9 @@ struct PlayMode : Mode {
 
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
+	Scene::Transform *target = nullptr;
+	glm::vec3 target_wpos;
+	glm::vec3 user_spot;
 
 	//player info:
 	struct Player {
