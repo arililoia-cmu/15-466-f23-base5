@@ -45,29 +45,24 @@ WalkMesh::WalkMesh(std::vector< glm::vec3 > const &vertices_, std::vector< glm::
 
 //TODO done - project pt to the plane of triangle a,b,c and return the barycentric weights of the projected point:
 glm::vec3 barycentric_weights(glm::vec3 const &a, glm::vec3 const &b, glm::vec3 const &c, glm::vec3 const &pt) {
-	// following Craig Reynolds' answer to this stackexchange post:
-	// https://gamedev.stackexchange.com/questions/28781/easy-way-to-project-point-onto-triangle-or-plane
-	// return bweights;
-	glm::vec3 u = b - a;
-	glm::vec3 v = c - a;
-	// inspired by OpenGL cross documentation:
-	// https://registry.khronos.org/OpenGL-Refpages/gl4/html/cross.xhtml
-	glm::vec3 n = cross(u,v);
-	glm::vec3 w = pt - a;
-	// Barycentric coordinates of the projection P′of P onto T:
-    // γ=[(u×w)⋅n]/n²
-	float gamma = dot(cross(u,w), n) / dot(n,n);
-	std::cout << "barycentric_weights: gamma = " << gamma << std::endl;
-	// β=[(w×v)⋅n]/n²
-	float beta = (dot(cross(w,v), n)) / dot(n,n);
-	std::cout << "barycentric_weights: beta = " << beta << std::endl;
-	float alpha = 1.0 - gamma - beta;
-	
-	std::cout << "barycentric_weights: alpha = " << alpha << std::endl;
-	glm::vec3 bweights = glm::vec3(alpha, beta, gamma);
-	return bweights;
+	// following Sirui Huang's implementation from class:
 
-	// return glm::vec3(0.25f, 0.25f, 0.5f);
+	glm::vec3 v0 = b-a, v1 = c-a, v2 = pt-a;
+	float d00 = glm::dot(v0, v0);
+	float d01 = glm::dot(v0, v1);
+	float d11 = glm::dot(v1, v1);
+	float d20 = glm::dot(v2, v0);
+	float d21 = glm::dot(v2, v1);
+
+	float denominator = d00 * d11 - d01 * d01;
+	float v = (d11 * d20 - d01 * d21) / denominator;
+	float w = (d00 * d21 - d01 * d20) / denominator;
+	std::cout << "bcc x " << 1.0f-v-w << std::endl;
+	std::cout << "bcc y " << v << std::endl;
+	std::cout << "bcc z " << w << std::endl;
+
+	return glm::vec3(1.0f-v-w, v, w);
+	
 }
 
 WalkPoint WalkMesh::nearest_walk_point(glm::vec3 const &world_point) const {
