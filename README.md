@@ -2,7 +2,7 @@
 
 Author: Ari Liloia
 
-Design: My game is a fast-paced 2d movement game that lets a player move around and pick up pieces of "candy". 
+Design: My game is a fast-paced 2d movement game that lets a player move around and pick up pieces of "candy" that spawn one after another as they are picked up. The goal of the game is to collect new pieces within three seconds of their spawning.
 
 Screen Shot:
 
