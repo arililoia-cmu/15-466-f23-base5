@@ -51,7 +51,7 @@ glm::vec3 PlayMode::generate_random_vec3(){
 	// also taken from my game 2 code
 	std::random_device rd;     // Only used once to initialise (seed) engine
 	std::mt19937 rng(rd());    // Random-number engine used (Mersenne-Twister in this case)
-	std::uniform_real_distribution<float> uni(-1.0f,1.0f); // Guaranteed unbiased
+	std::uniform_real_distribution<float> uni(-0.9f,0.9f); // Guaranteed unbiased
 	return glm::vec3(uni(rng), uni(rng), 0.0f);
 }
 
@@ -63,6 +63,10 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 			target = &transform;
 			target_wpos = target->position;
 		}
+		// if (transform.name == "Player") {
+		// 	target = &transform;
+		// 	target_wpos = target->position;
+		// }
 		
 	}
 
@@ -78,7 +82,7 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	player.camera->transform->parent = player.transform;
 
 	//player's eyes are 1.8 units above the ground:
-	player.camera->transform->position = glm::vec3(0.0f, 0.0f, 1.8f);
+	player.camera->transform->position = glm::vec3(0.0f, 0.0f, 0.5f);
 
 	//rotate camera facing direction (-z) to player facing direction (+y):
 	player.camera->transform->rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -172,7 +176,7 @@ void PlayMode::update(float elapsed) {
 
 		// time(&next_update);
 		time(&next_update);
-		if (next_update != last_update){
+		if (next_update >= (last_update+2)){
 			last_update = next_update;
 			target->position = generate_random_vec3();
 		}
@@ -195,7 +199,7 @@ void PlayMode::update(float elapsed) {
 		glm::vec3 remain = player.transform->make_local_to_world() * glm::vec4(move.x, move.y, 0.0f, 0.0f);
 		// std::cout << "remain " << remain.x << ", " << remain.y << ", " << remain.z << std::endl;
 		// user_spot += remain;
-		std::cout << "player.camera->transform->position spot " << player.camera->transform->position.x << ", " << player.camera->transform->position.y << ", " << player.camera->transform->position.z << std::endl;
+		std::cout << "player.transform->position spot " << player.transform->position.x << ", " << player.transform->position.y << ", " << player.transform->position.z << std::endl;
 		//using a for() instead of a while() here so that if walkpoint gets stuck in
 		// some awkward case, code will not infinite loop:
 		for (uint32_t iter = 0; iter < 10; ++iter) {
