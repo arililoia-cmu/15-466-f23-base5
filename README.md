@@ -1,18 +1,14 @@
-# (TODO: your game's title)
+# Candy Biter
 
-Author: (TODO: your name)
+Author: Ari Liloia
 
-Design: (TODO: In two sentences or fewer, describe what is new and interesting about your game.)
+Design: My game is a fast-paced 2d movement game that lets a player move around and pick up pieces of "candy". 
 
 Screen Shot:
 
 ![Screen Shot](screenshot.png)
 
-How To Play:
-
-(TODO: describe the controls and (if needed) goals/strategy.)
-
-Sources: (TODO: list a source URL for any assets you did not create yourself. Make sure you have a license for the asset.)
+How To Play: Use the WASD keys and clicking on the screen to move your character / perspective around and look for pieces of candy. 
 
 This game was built with [NEST](NEST.md).
 

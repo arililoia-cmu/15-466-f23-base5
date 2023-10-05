@@ -36,6 +36,7 @@ struct PlayMode : Mode {
 	Scene::Transform *target = nullptr;
 	glm::vec3 target_wpos;
 	glm::vec3 user_spot;
+	int points = -1;
 
 	//player info:
 	struct Player {

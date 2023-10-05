@@ -10,7 +10,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
-
+#include <sstream>
 #include <random>
 
 GLuint phonebank_meshes_for_lit_color_texture_program = 0;
@@ -176,10 +176,10 @@ void PlayMode::update(float elapsed) {
 
 		// time(&next_update);
 		time(&next_update);
-		if (next_update >= (last_update+2)){
-			last_update = next_update;
-			target->position = generate_random_vec3();
-		}
+		// if (next_update >= (last_update+2)){
+		// 	last_update = next_update;
+		// 	target->position = generate_random_vec3();
+		// }
 
 
 		// std::cout << "next_update - last_update " << next_update - last_update << std::endl;
@@ -200,6 +200,27 @@ void PlayMode::update(float elapsed) {
 		// std::cout << "remain " << remain.x << ", " << remain.y << ", " << remain.z << std::endl;
 		// user_spot += remain;
 		std::cout << "player.transform->position spot " << player.transform->position.x << ", " << player.transform->position.y << ", " << player.transform->position.z << std::endl;
+		
+		// checking closeness inspired by this SE post & documentation:
+		// https://stackoverflow.com/questions/34103410/glmvec3-and-epsilon-comparison
+		// https://glm.g-truc.net/0.9.4/api/a00146.html
+
+		double xdiff = abs(player.transform->position.x - target->position.x);
+		double ydiff = abs(player.transform->position.y - target->position.y);
+		if ((ydiff <= 0.07) && (xdiff <= 0.07)){
+			points++;
+			target->position = generate_random_vec3();
+		}
+		std::cout << points << std::endl;
+		// std::cout << xdiff << std::endl;
+		// if (glm::epsilonEqual(player.transform->position, target->position, glm::vec3(0.01,0.01,0.01))){
+		// 	std::cout << "T" << std::endl;
+		// }else{
+		// 	std::cout << "F" << std::endl;
+		// }
+		
+		
+		
 		//using a for() instead of a while() here so that if walkpoint gets stuck in
 		// some awkward case, code will not infinite loop:
 		for (uint32_t iter = 0; iter < 10; ++iter) {
@@ -334,12 +355,17 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		));
 
 		constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion looks; WASD moves; escape ungrabs mouse",
+
+		std::ostringstream o_points;	
+		o_points << points;
+		std::string str_points = o_points.str();
+
+		lines.draw_text("Points: " + str_points,
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("Mouse motion looks; WASD moves; escape ungrabs mouse",
+		lines.draw_text("Points: " + str_points,
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
